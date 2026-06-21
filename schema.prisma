@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Member {
+  id             String               @id
+  fullName       String
+  age            Int
+  gender         String
+  nationality    String
+  phone          String
+  address        String
+  degree         String
+  specialization String
+  nationalId     String
+  idImage        String?              // مسار أو صورة الهوية (Base64 أو Cloudinary)
+  isBlacklisted  Boolean              @default(false)
+  blacklistReason String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  visits         Visit[]
+  activities     Activity[]
+  registrations  CourseRegistration[]
+}
+
+model Visit {
+  id        String   @id @default(uuid())
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  purpose   String
+  details   String?
+  date      DateTime @default(now())
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  type        String   // زيارة، دورة، ورشة عمل، دراسة
+  title       String
+  description String?
+  date        DateTime @default(now())
+  time        String?
+  location    String?
+}
+
+model Course {
+  id            String               @id @default(uuid())
+  title         String
+  description   String?
+  startDate     DateTime
+  endDate       DateTime
+  location      String?
+  maxAttendees  Int?
+  createdAt     DateTime             @default(now())
+  registrations CourseRegistration[]
+}
+
+model CourseRegistration {
+  id         String   @id @default(uuid())
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([courseId, memberId])
+}
+
+model Employee {
+  id           String   @id @default(uuid())
+  fullName     String
+  employeeCode String   @unique
+  role         String   @default("EMPLOYEE") // "ADMIN" أو "EMPLOYEE"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SystemConfig {
+  key   String @id
+  value String
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  employeeId   String?
+  employeeName String?
+  action       String
+  details      String
+  createdAt    DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  memberId  String?  // null = global notification for all members
+  title     String
+  message   String
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
+}
+model PushSubscription {
+  id        String   @id @default(uuid())
+  memberId  String   // reference to Member.id
+  endpoint  String
+  keys      Json    // { p256dh: string, auth: string }
+  createdAt DateTime @default(now())
+}
+
+
+
